@@ -22,6 +22,7 @@
         <hr noshade="" color="white" size="1.5">
         <div id="content">{{write.contents}}</div>
         <div id="date">{{write.updated_at|date:"Y.m.d"}}</div>
+        <div>💜{{write.like_count}}</div>
       </div>
       
       {% if write.images %}
@@ -33,9 +34,11 @@
   
   <div class="create">
     <div class="create_write">
+      {% if user.pro.nickname %}
       <div class="create_btn">
         <button><a href="{% url 'main:create' %}">NEW POST</a></button>
       </div>
+      {% endif %}
     </div>
   </div>
   <footer>

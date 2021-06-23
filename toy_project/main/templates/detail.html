@@ -18,14 +18,29 @@
       <div class="content">
         <div id="title">{{my_write.title}}</div>
         <div id="date">{{my_write.updated_at}}</div>
+        {% if user.pro.nickname %}
         <div id="button"><a href="{%url 'main:update' my_write.id %}"><button>| 수정</button></a>
         <a href="{%url 'main:delete' my_write.id %}"><button>| 삭제</button></a><br></div>
+        {%endif%}
         
         <hr noshade="" color="black" size="1.5">
         <div id="content">{{my_write.contents}}</div>
         
       </div>
     </div>
+  </div>
+
+  <div class="like">
+    <p>  {{my_write.like_count}}</p>
+    <a href="{% url 'main:post_like_toggle' my_write.id %}">
+      
+      {% if my_write in profile.like_post.all %}
+      💜취소 
+      {% else %}
+      🤍좋아요 
+      {% endif %}
+    </a>
+   
   </div>
     
   <div class="comments">

@@ -3,6 +3,7 @@ from .forms import WriteForm, CommentForm
 from .models import Write, Comment
 from django.contrib.auth.models import User
 from accounts.models import Profile
+from django.contrib.auth.decorators import login_required
 
 
 # Create your views here.
@@ -14,11 +15,15 @@ def index(request):
     all_profile = Profile.objects.all()
     return render(request, 'index.html', {'all_write': all_write, 'all_profile': all_profile})
 
-
+@login_required
 def create(request):
+    user = request.user
+    profile = Profile.objects.get(user=user)
     if request.method == "POST":
         create_form = WriteForm(request.POST, request.FILES)
         if create_form.is_valid():
+            create_form =  create_form.save(commit=False)
+            create_form.user = profile
             create_form.save()
             return redirect('index')
     write_form = WriteForm
@@ -28,9 +33,10 @@ def create(request):
 def detail(request, write_id):
     user = request.user
     my_write = get_object_or_404(Write, pk=write_id)
+    profile = Profile.objects.get(user=user)
     comment_form = CommentForm()
     comments = Comment.objects.filter(post=write_id)
-    return render(request, 'detail.html', {'my_write': my_write, 'comment_form': comment_form, 'comments': comments, 'user': user})
+    return render(request, 'detail.html', {'my_write': my_write, 'comment_form': comment_form, 'comments': comments, 'user': user,'profile':profile})
 
 
 def update(request, write_id):
@@ -67,3 +73,21 @@ def delete_comment(request, write_id, comment_id):
     my_comment = get_object_or_404(Comment, id=comment_id)
     my_comment.delete()
     return redirect("main:detail", write_id)
+
+@login_required
+def post_like_toggle(request,post_id):
+    post = get_object_or_404(Write, pk=post_id)
+    user = request.user
+    profile = Profile.objects.get(user=user)
+
+    try:
+        check_like = profile.like_post.get(id=post_id)
+        profile.like_post.remove(post)
+        post.like_count -= 1
+        post.save()
+    except:
+        profile.like_post.add(post)
+        post.like_count +=1
+        post.save()
+    return redirect('main:detail', post_id)
+
