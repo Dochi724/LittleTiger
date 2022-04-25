@@ -1,8 +1,8 @@
-{% extends 'base.html' %} {% load static %} 
+{% extends 'base.html' %} {% load static %}
 
 {% block extrahead %}
 
-<link rel="stylesheet" href="{% static 'css/detail.css' %}" >
+<link rel="stylesheet" href="{% static 'css/detail.css' %}">
 
 {% endblock %}
 {% block content %}
@@ -18,19 +18,111 @@
       <div class="content">
         <div id="title">{{my_write.title}}</div>
         <div id="date">{{my_write.updated_at}}</div>
-        <a href="{%url 'main:update' my_write.id %}"><button>| 수정</button></a>
-        <a href="{%url 'main:delete' my_write.id %}"><button>| 삭제</button></a><br>
+        <div id="button"><a href="{%url 'main:update' my_write.id %}"><button>| 수정</button></a>
+          <a href="{%url 'main:delete' my_write.id %}"><button>| 삭제</button></a>
+          <a href="{%url 'main:page' my_write.id %}"><button>| 지도추가</button></a><br>
+        </div>
+
         <hr noshade="" color="black" size="1.5">
-        <div id="content">{{my_write.contents}}</div> 
+        <div id="content">{{my_write.contents}}</div>
+        <div class="like">
+          <a href="{% url 'main:post_like_toggle' my_write.id %}">
+      
+            {% if my_write in profile.like_post.all %}
+            <img id="heart" src="{%static 'images/heart.png'%}">
+            {% else %}
+            <img id="empty_heart" src="{%static 'images/empty_heart.png'%}">
+            {% endif %}
+          </a>
+          <span>{{my_write.like_count}}</span> 
+        </div>
       </div>
     </div>
   </div>
   
-  <!-- 지도자리 -->
+  {% if map%}
+  <div id="place">
+    <p>TRAVEL ROUTE</p>
+    {% for map in map.all %}
+    <tr>
+      <td>{{ map.placename }} > </td>
+    </tr>
+    {% endfor %}
+  </div>
+  <div id="map" style="width:100%;height:400px;"></div>
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e4629dfd6293cb3c36858f5010d2a71e&libraries=services"></script>
+  {%endif%}
+  <script>
+      // 마커를 클릭하면 장소명을 표출할 인포윈도우 입니다
+      var infowindow = new kakao.maps.InfoWindow({zIndex:1});
+       
+      var mapContainer = document.getElementById('map'), // 지도를 표시할 div 
+          mapOption = {
+              center: new kakao.maps.LatLng(37.539448, 126.987477), // 지도의 중심좌표
+              level: 3 // 지도의 확대 레벨
+          };  
+      var map = new kakao.maps.Map(mapContainer, mapOption); 
+      var infowindow = new kakao.maps.InfoWindow({zIndex:1});
+      var imageSrc = "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png"; 
+      var bounds = new kakao.maps.LatLngBounds();
+      
+      var positions =[
+          {% for i in map %}
+             {
+                  lat : {{i.lat}},
+                  lon : {{i.lon}},
+                  title : '{{i.placename}}',
+                  latlng : new kakao.maps.LatLng({{i.lat}},{{i.lon}})
+                },
+            {% endfor %}
+          ]; 
+               
+      
+          for (var i = 0; i < positions.length; i ++) {
+              
+              // 마커 이미지의 이미지 크기 입니다
+              var imageSize = new kakao.maps.Size(24, 35); 
+              
+              // 마커 이미지를 생성합니다    
+              var markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize); 
+              
+              // 마커를 생성합니다
+              var marker = new kakao.maps.Marker({
+                  map: map, // 마커를 표시할 지도
+                  position: positions[i].latlng, // 마커를 표시할 위치
+                  title : positions[i].title, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
+                  image : markerImage // 마커 이미지 
+              });
+              bounds.extend(positions[i].latlng);
+        
+          }  
+            
+              // LatLngBounds 객체에 추가된 좌표들을 기준으로 지도의 범위를 재설정합니다
+              // 이때 지도의 중심좌표와 레벨이 변경될 수 있습니다
+              map.setBounds(bounds);
+          
+      
+      
+      </script>
 
-  <!-- <div class="comment">
-    <button type="submit">댓글작성</button>
-  </div> -->
-</div>
+  <div class="comments">
+    {% for comment in comments %}
+    <span id="username">{{comment.user}}</span>
+    <span id="comment_time">| {{comment.updated_at}}</span>
+    <div id="comment">{{comment.content}}</div>
+    <div id="delete_button"><a href="{% url 'main:delete_comment' my_write.id comment.id%}">삭제</a></div><br>
+    <hr>
+    <br><br>
+    {%endfor%}
+  </div>
+  <div class="create_comments">
+    {% if user.is_authenticated %}
+    <form method="POST" action="{% url 'main:create_comment' my_write.id %}">
+      {% csrf_token %}
+      {{comment_form}}
+      <span id="create_button"><button type="submit"><img src="{%static 'images/plane.png'%}"></button></span>
+    </form>
+    {%endif%}
+  </div>
 
-{% endblock %}
+  {% endblock %}
